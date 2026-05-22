@@ -90,10 +90,35 @@ class ImageOnMap extends PluginBase implements Listener {
 	public static function registerItem(): void {
 		$item = FilledMapItemRegistry::FILLED_MAP();
 
-		GlobalItemDataHandlers::getDeserializer()->map(ItemTypeNames::FILLED_MAP, fn() => clone $item);
-		GlobalItemDataHandlers::getSerializer()->map($item, fn() => new SavedItemData(ItemTypeNames::FILLED_MAP));
+		GlobalItemDataHandlers::getDeserializer()->map(ItemTypeNames::FILLED_MAP, function(SavedItemData $data) use ($item) : \pocketmine\item\Item {
+			$map = clone $item;
+			$tag = $data->getTag();
+			if($tag !== null && $tag->getTag("map_uuid") instanceof \pocketmine\nbt\tag\LongTag) {
+				$map->setMapId($tag->getLong("map_uuid"));
+			}
+			return $map;
+		});
+
+		GlobalItemDataHandlers::getSerializer()->map($item, function(\czechpmdevs\imageonmap\item\FilledMap $map) : SavedItemData {
+			$tag = new \pocketmine\nbt\tag\CompoundTag();
+			$mapId = $map->getMapId();
+			if ($mapId !== -1) {
+				$tag->setLong("map_uuid", $mapId);
+			}
+			return new SavedItemData(ItemTypeNames::FILLED_MAP, 0, null, $tag);
+		});
 
 		StringToItemParser::getInstance()->register("filled_map", fn() => clone $item);
+	}
+
+	/**
+	 * @handleCancelled
+	 */
+	public function onDataPacketDecode(\pocketmine\event\server\DataPacketDecodeEvent $event): void {
+		if($event->getPacketId() === MapInfoRequestPacket::NETWORK_ID) {
+			$this->getLogger()->info("UNCANCELING MAP INFO REQUEST");
+			$event->uncancel(); 
+		}
 	}
 
 	public function onDataPacketReceive(DataPacketReceiveEvent $event): void {

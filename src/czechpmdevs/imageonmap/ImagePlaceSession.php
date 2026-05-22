@@ -55,22 +55,24 @@ class ImagePlaceSession implements Listener {
 		$this->plugin->getServer()->getPluginManager()->registerEvents($this, $this->plugin);
 	}
 
-	public function onBreak(BlockBreakEvent $event): void {
+	public function onInteract(\pocketmine\event\player\PlayerInteractEvent $event): void {
 		$player = $event->getPlayer();
 		if($player->getId() !== $this->player->getId()) {
-			$player->sendMessage("{$player->getId()}:{$this->player->getId()}");
 			return;
+		}
+
+		if($event->getAction() !== \pocketmine\event\player\PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+			return;
+		}
+
+		if(!$event->getBlock()->hasSameTypeId(VanillaBlocks::ITEM_FRAME())) {
+			return; 
 		}
 
 		$event->cancel();
 
-		if(!$event->getBlock()->hasSameTypeId(VanillaBlocks::ITEM_FRAME())) {
-			$player->sendMessage("§6Block you want to place map on must be Item Frame.");
-			return;
-		}
-
 		if(!isset($this->firstPosition)) {
-			$player->sendMessage("§aFirst position set to {$event->getBlock()->getPosition()->getX()}, {$event->getBlock()->getPosition()->getY()}, {$event->getBlock()->getPosition()->getZ()}. Break second block.");
+			$player->sendMessage("§aFirst position set to {$event->getBlock()->getPosition()->getX()}, {$event->getBlock()->getPosition()->getY()}, {$event->getBlock()->getPosition()->getZ()}. Hit second block.");
 			$this->firstPosition = clone $event->getBlock()->getPosition();
 			return;
 		}

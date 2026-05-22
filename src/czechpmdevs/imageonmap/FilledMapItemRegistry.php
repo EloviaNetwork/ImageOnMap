@@ -55,6 +55,6 @@ final class FilledMapItemRegistry {
 	}
 
 	protected static function setup(): void {
-		self::register("filled_map", new FilledMap(new ItemIdentifier(ItemTypeIds::newId())));
+		self::register("filled_map", new FilledMap(new ItemIdentifier(\pocketmine\item\ItemTypeIds::newId())));
 	}
 }
